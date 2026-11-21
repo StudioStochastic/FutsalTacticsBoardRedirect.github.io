@@ -1,0 +1,1 @@
+# FutsalTacticsBoardRedirect.github.io
