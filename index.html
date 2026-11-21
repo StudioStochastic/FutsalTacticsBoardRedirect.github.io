@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Futsal Tactics Board by Studio Stohcastic</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Futsal Tactics Board by Studio Stohcastic. Download it for iPhone, iPad or Android.">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<style>
+  :root {
+    --bg: #f3f6f4; --ink: #12261c; --line: #0f7a4d; --muted: #4d6357;
+    --btn-bg: #12261c; --btn-ink: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0d1a13; --ink: #eaf3ee; --line: #3ecf8e; --muted: #9db3a7;
+            --btn-bg: #eaf3ee; --btn-ink: #0d1a13; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: ui-rounded, "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    display: grid; place-items: center; padding: 24px;
+  }
+  main { width: 100%; max-width: 380px; text-align: center; }
+  .court { width: 160px; height: 96px; margin: 0 auto 28px; display: block; }
+  .court * { fill: none; stroke: var(--line); stroke-width: 3; }
+  h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 6px; }
+  p { color: var(--muted); margin: 0 0 28px; line-height: 1.5; }
+  .btns { display: grid; gap: 12px; }
+  .btn {
+    display: block; padding: 16px 20px; border-radius: 14px; text-decoration: none;
+    background: var(--btn-bg); color: var(--btn-ink); font-weight: 600; font-size: 1.05rem;
+  }
+  .btn:focus-visible { outline: 3px solid var(--line); outline-offset: 3px; }
+  #status { min-height: 1.4em; font-size: .95rem; margin-top: 20px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <svg class="court" viewBox="0 0 160 96" aria-hidden="true">
+    <rect x="2" y="2" width="156" height="92" rx="4"/>
+    <line x1="80" y1="2" x2="80" y2="94"/>
+    <circle cx="80" cy="48" r="14"/>
+    <path d="M2 28 h14 a20 20 0 0 1 0 40 h-14"/>
+    <path d="M158 28 h-14 a20 20 0 0 0 0 40 h14"/>
+  </svg>
+  <h1>Futsal Tactics Board</h1>
+  <p>by Studio Stohcastic</p>
+
+  <div class="btns" id="buttons">
+    <a class="btn" id="ios-btn" href="#">Download on the App Store</a>
+    <a class="btn" id="android-btn" href="#">Get it on Google Play</a>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+</main>
+
+<script>
+(function () {
+  /* ============ EDIT THESE TWO LINES ============ */
+  var IOS_URL = "https://apps.apple.com/app/idXXXXXXXXXX";   // your App Store link
+  var ANDROID_PACKAGE = "com.studiostohcastic.futsaltacticsboard"; // your Google Play package name
+  /* ============================================== */
+
+  var ua = navigator.userAgent || "";
+  var isAndroid = /Android/i.test(ua);
+  // iPadOS 13+ reports itself as a Mac, so check for touch support too
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) ||
+              (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  var isInApp = /Instagram|FBAN|FBAV|FB_IAB/i.test(ua); // Instagram / Facebook in-app browser
+
+  var params = new URLSearchParams(location.search);
+
+  // ---- Build store URLs, passing campaign data through ----
+  function iosUrl() {
+    var u = new URL(IOS_URL);
+    // Apple campaign tracking: ?ct=<campaign>&pt=<provider id>&mt=8 are passed if you set them on this page's URL
+    ["ct", "pt", "mt", "at"].forEach(function (k) {
+      if (params.has(k)) u.searchParams.set(k, params.get(k));
+    });
+    // Fall back to utm_campaign as the Apple campaign token
+    if (!u.searchParams.has("ct") && params.has("utm_campaign")) {
+      u.searchParams.set("ct", params.get("utm_campaign").slice(0, 40));
+    }
+    return u.toString();
+  }
+
+  function playReferrer() {
+    var keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
+    var parts = [];
+    keys.forEach(function (k) {
+      if (params.has(k)) parts.push(k + "=" + encodeURIComponent(params.get(k)));
+    });
+    return parts.join("&");
+  }
+
+  function playWebUrl() {
+    var u = "https://play.google.com/store/apps/details?id=" + encodeURIComponent(ANDROID_PACKAGE);
+    var r = playReferrer();
+    if (r) u += "&referrer=" + encodeURIComponent(r);
+    return u;
+  }
+
+  // Intent URL: the most reliable way to open the Play Store app from an in-app browser on Android
+  function playIntentUrl() {
+    var r = playReferrer();
+    return "intent://details?id=" + encodeURIComponent(ANDROID_PACKAGE) +
+           (r ? "&referrer=" + encodeURIComponent(r) : "") +
+           "#Intent;scheme=market;package=com.android.vending;" +
+           "S.browser_fallback_url=" + encodeURIComponent(playWebUrl()) + ";end";
+  }
+
+  var iosHref = iosUrl();
+  var androidHref = playWebUrl();
+
+  // Manual buttons (also the fallback if an auto-redirect is blocked)
+  var iosBtn = document.getElementById("ios-btn");
+  var androidBtn = document.getElementById("android-btn");
+  iosBtn.href = iosHref;
+  androidBtn.href = isAndroid && isInApp ? playIntentUrl() : androidHref;
+
+  var status = document.getElementById("status");
+
+  // ---- Auto-redirect on mobile; show both buttons on desktop ----
+  if (isIOS || isAndroid) {
+    // Only show the button that matches the device
+    (isIOS ? androidBtn : iosBtn).classList.add("hidden");
+    status.textContent = "Opening the store\u2026";
+
+    var target = isIOS ? iosHref : (isInApp ? playIntentUrl() : androidHref);
+    // location.replace keeps the back button from bouncing people back to this page
+    window.location.replace(target);
+
+    // If the in-app browser blocked it, tell the visitor to tap the button
+    setTimeout(function () {
+      status.textContent = "Tap the button above to open the store.";
+    }, 2000);
+  } else {
+    status.textContent = "Open this page on your phone, or pick a store above.";
+  }
+})();
+</script>
+
+<noscript>
+  <p style="text-align:center">
+    <a href="https://apps.apple.com/app/idXXXXXXXXXX">App Store</a> ·
+    <a href="https://play.google.com/store/apps/details?id=com.studiostohcastic.futsaltacticsboard">Google Play</a>
+  </p>
+</noscript>
+</body>
+</html>
